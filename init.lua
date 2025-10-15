@@ -62,6 +62,7 @@ vim.o.termguicolors = true
 vim.g.have_nerd_font = true
 vim.opt.guifont = { "Fira Code", "h12" }
 vim.opt.signcolumn = "yes:1"
+vim.opt.showmode = false
 
 -- Color Scheme Configuration
 vim.g.gruvbox_baby_function_style = "NONE"
@@ -70,9 +71,9 @@ vim.g.gruvbox_baby_telescope_theme = 1
 vim.cmd("colorscheme gruvbox-baby")
 
 require('lualine').setup {
-    options = {
-        theme = "gruvbox-baby",
-    }
+	options = {
+		theme = "gruvbox-baby",
+	}
 }
 
 -- Pane Keymaps
@@ -127,7 +128,7 @@ keymap("n", "gr", "<Plug>(coc-references)", opts)
 keymap("n", "<leader>rn", "<Plug>(coc-rename)", opts)
 keymap("n", "<leader>ca", "<Plug>(coc-codeaction)", opts)
 keymap("x", "<leader>ca", "<Plug>(coc-codeaction-selected)", opts)
-keymap("n", "<leader>qf", "<Plug>(coc-fix-current)", opts)
+-- keymap("n", "<leader>qf", "<Plug>(coc-fix-current)", opts)
 -- === Formatting ===
 keymap("n", "<leader>f", "<Plug>(coc-format)", opts)
 keymap("x", "<leader>f", "<Plug>(coc-format-selected)", opts)
@@ -165,3 +166,15 @@ local bracket_pairs = {
 for open_char, close_char in pairs(bracket_pairs) do
 	vim.keymap.set("i", open_char, open_char .. close_char .. "<Left>")
 end
+
+vim.keymap.set("n", "<leader>gt", function()
+  local test = vim.fn.expand("<cword>")
+  local dir = vim.fn.expand("%:p:h")
+  vim.cmd("vsplit | vertical resize 80 | terminal cd " .. dir .. " && go test -v -run '^" .. test .. "$'")
+end, { desc = "Run Go test under cursor (in vertical split terminal)" })
+
+-- vim.keymap.set("n", "<leader>gt", function()
+--   local test = vim.fn.expand("<cword>")
+--   local dir = vim.fn.expand("%:p:h")
+--   vim.cmd("botright split | resize 15 | terminal cd " .. dir .. " && go test -v -run '^" .. test .. "$'")
+-- end, { desc = "Run Go test under cursor (in split terminal)" })
