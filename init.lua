@@ -44,6 +44,10 @@ require("lazy").setup({
 		"ThePrimeagen/harpoon",
 		branch = "harpoon2",
 		dependencies = { "nvim-lua/plenary.nvim" }
+	},
+	{
+		'nvim-lualine/lualine.nvim',
+		dependencies = { 'nvim-tree/nvim-web-devicons' }
 	}
 })
 -- Default Editor Settings
@@ -56,9 +60,20 @@ vim.opt.wrap = false
 vim.opt.clipboard = "unnamedplus"
 vim.o.termguicolors = true
 vim.g.have_nerd_font = true
-vim.opt.guifont = { "Fira Code", "h12"}
-vim.opt.signcolumn="yes:1"
+vim.opt.guifont = { "Fira Code", "h12" }
+vim.opt.signcolumn = "yes:1"
+
+-- Color Scheme Configuration
+vim.g.gruvbox_baby_function_style = "NONE"
+vim.g.gruvbox_baby_keyword_style = "italic"
+vim.g.gruvbox_baby_telescope_theme = 1
 vim.cmd("colorscheme gruvbox-baby")
+
+require('lualine').setup {
+    options = {
+        theme = "gruvbox-baby",
+    }
+}
 
 -- Pane Keymaps
 vim.keymap.set("n", "<leader>h", "<C-w>h", { desc = "Move to left split" })
@@ -79,7 +94,7 @@ vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Telescope help ta
 -- NeoTree Keymap (toggle)
 vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file tree" })
 
--- 
+--
 local harpoon = require("harpoon")
 
 -- REQUIRED
