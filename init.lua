@@ -68,6 +68,8 @@ vim.opt.showmode = false
 vim.g.gruvbox_baby_function_style = "NONE"
 vim.g.gruvbox_baby_keyword_style = "italic"
 vim.g.gruvbox_baby_telescope_theme = 1
+vim.g.gruvbox_baby_background_color = "dark"
+
 vim.cmd("colorscheme gruvbox-baby")
 
 require('lualine').setup {
@@ -172,9 +174,3 @@ vim.keymap.set("n", "<leader>gt", function()
   local dir = vim.fn.expand("%:p:h")
   vim.cmd("vsplit | vertical resize 80 | terminal cd " .. dir .. " && go test -v -run '^" .. test .. "$'")
 end, { desc = "Run Go test under cursor (in vertical split terminal)" })
-
--- vim.keymap.set("n", "<leader>gt", function()
---   local test = vim.fn.expand("<cword>")
---   local dir = vim.fn.expand("%:p:h")
---   vim.cmd("botright split | resize 15 | terminal cd " .. dir .. " && go test -v -run '^" .. test .. "$'")
--- end, { desc = "Run Go test under cursor (in split terminal)" })
