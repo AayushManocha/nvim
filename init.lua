@@ -57,6 +57,7 @@ vim.opt.clipboard = "unnamedplus"
 vim.o.termguicolors = true
 vim.g.have_nerd_font = true
 vim.opt.guifont = { "Fira Code", "h12"}
+vim.opt.signcolumn="yes:1"
 vim.cmd("colorscheme gruvbox-baby")
 
 -- Pane Keymaps
