@@ -63,6 +63,9 @@ vim.g.have_nerd_font = true
 vim.opt.guifont = { "Fira Code", "h12" }
 vim.opt.signcolumn = "yes:1"
 vim.opt.showmode = false
+vim.opt.tabstop = 2        -- how wide a tab character is
+vim.opt.shiftwidth = 2     -- how many spaces to indent
+vim.opt.softtabstop = 2    -- how many spaces <Tab> insert
 
 -- Color Scheme Configuration
 vim.g.gruvbox_baby_function_style = "NONE"
@@ -86,6 +89,7 @@ vim.keymap.set("n", "<leader>k", "<C-w>k", { desc = "Move to top split" })
 vim.keymap.set("n", "<leader>q", ":q<CR>", { desc = "Close Buffer" })
 vim.keymap.set("n", "<leader>s", ":split<CR><C-w>j", { desc = "Horizontal split" })
 vim.keymap.set("n", "<leader>v", ":vsplit<CR><C-w>l", { desc = "Vertical split" })
+vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { noremap = true, silent = true })
 
 -- Telescope Keymaps
 local builtin = require("telescope.builtin")
