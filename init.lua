@@ -66,6 +66,7 @@ vim.opt.showmode = false
 vim.opt.tabstop = 2        -- how wide a tab character is
 vim.opt.shiftwidth = 2     -- how many spaces to indent
 vim.opt.softtabstop = 2    -- how many spaces <Tab> insert
+vim.opt.scrolloff = 8
 
 -- Color Scheme Configuration
 vim.g.gruvbox_baby_function_style = "NONE"
@@ -76,9 +77,27 @@ vim.g.gruvbox_baby_background_color = "dark"
 vim.cmd("colorscheme gruvbox-baby")
 
 require('lualine').setup {
-	options = {
-		theme = "gruvbox-baby",
-	}
+  options = {
+    theme = 'auto',
+    section_separators = '',
+    component_separators = '',
+  },
+  sections = {
+    lualine_a = { 'mode' },
+    lualine_b = {},
+    lualine_c = { 'filename' },
+    lualine_x = {},
+    lualine_y = { 'progress' },
+    lualine_z = {},
+  },
+  inactive_sections = {
+    lualine_a = {},
+    lualine_b = {},
+    lualine_c = { 'filename' },
+    lualine_x = {},
+    lualine_y = {},
+    lualine_z = {},
+  },
 }
 
 -- Pane Keymaps
@@ -97,6 +116,7 @@ vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Telescope find f
 vim.keymap.set("n", "<leader>fg", builtin.git_files, { desc = "Telescope live grep" })
 vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Telescope buffers" })
 vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Telescope help tags" })
+vim.keymap.set("n", "<leader>lg", builtin.live_grep, { desc = "Telescope help tags" })
 
 -- NeoTree Keymap (toggle)
 vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file tree" })
@@ -135,23 +155,28 @@ keymap("n", "<leader>rn", "<Plug>(coc-rename)", opts)
 keymap("n", "<leader>ca", "<Plug>(coc-codeaction)", opts)
 keymap("x", "<leader>ca", "<Plug>(coc-codeaction-selected)", opts)
 -- keymap("n", "<leader>qf", "<Plug>(coc-fix-current)", opts)
+--
 -- === Formatting ===
 keymap("n", "<leader>f", "<Plug>(coc-format)", opts)
 keymap("x", "<leader>f", "<Plug>(coc-format-selected)", opts)
+
 -- === Hover & Signature Help ===
 keymap("n", "K", function()
 	vim.fn.CocActionAsync('doHover')
 end, opts)
 keymap("i", "<C-Space>", "coc#refresh()", { silent = true, expr = true })
+
 -- === Workspace / Lists ===
 keymap("n", "<leader>ws", ":CocList -I symbols<CR>", opts)
 keymap("n", "<leader>cl", ":CocList<CR>", opts)
+
 -- === Auto-highlighting ===
 vim.api.nvim_create_autocmd("CursorHold", {
 	callback = function()
 		vim.fn.CocActionAsync("highlight")
 	end,
 })
+
 -- === Optional: Signature help on placeholder jump ===
 vim.api.nvim_create_autocmd("User", {
 	pattern = "CocJumpPlaceholder",
@@ -159,6 +184,7 @@ vim.api.nvim_create_autocmd("User", {
 		vim.fn.CocActionAsync("showSignatureHelp")
 	end,
 })
+
 -- Autoclose Pairs Custom Script
 local bracket_pairs = {
 	["("] = ")",
@@ -169,6 +195,7 @@ local bracket_pairs = {
 	["<"] = ">",
 	["%"] = "%",
 }
+
 for open_char, close_char in pairs(bracket_pairs) do
 	vim.keymap.set("i", open_char, open_char .. close_char .. "<Left>")
 end
