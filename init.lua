@@ -4,6 +4,7 @@ if not vim.loop.fs_stat(lazypath) then
 	vim.fn.system({ "git", "clone", "https://github.com/folke/lazy.nvim", lazypath })
 end
 vim.opt.rtp:prepend(lazypath)
+
 -- Load plugins
 require("lazy").setup({
 	{
@@ -32,6 +33,9 @@ require("lazy").setup({
 		end,
 	},
 	{ "luisiacc/gruvbox-baby" },
+	{ "EdenEast/nightfox.nvim" },
+	{ 'embark-theme/vim', lazy = false, priority = 1000, name = 'embark' },
+	{'rose-pine/neovim', name="rose-pine"},
 	{ "nvim-telescope/telescope.nvim", tag = "0.1.8", dependencies = { "nvim-lua/plenary.nvim" } },
 	{
 		"nvim-neo-tree/neo-tree.nvim",
@@ -39,16 +43,21 @@ require("lazy").setup({
 		dependencies = { "nvim-lua/plenary.nvim", "MunifTanjim/nui.nvim", "nvim-tree/nvim-web-devicons" },
 	},
 	{ "nvim-tree/nvim-web-devicons", opts = {} },
-	{ 'neoclide/coc.nvim',           branch = "release" },
+	{ "ThePrimeagen/harpoon", branch = "harpoon2", dependencies = { "nvim-lua/plenary.nvim" } },
+	{ 'nvim-lualine/lualine.nvim', dependencies = { 'nvim-tree/nvim-web-devicons' } },
+	{'neovim/nvim-lspconfig', dependencies = { 'williamboman/mason.nvim', 'williamboman/mason-lspconfig.nvim'}},
+	{'hrsh7th/nvim-cmp', config = {}},
+	{'hrsh7th/cmp-nvim-lsp'},
 	{
-		"ThePrimeagen/harpoon",
-		branch = "harpoon2",
-		dependencies = { "nvim-lua/plenary.nvim" }
-	},
-	{
-		'nvim-lualine/lualine.nvim',
-		dependencies = { 'nvim-tree/nvim-web-devicons' }
-	}
+	"L3MON4D3/LuaSnip",
+	-- follow latest release.
+	version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+	-- install jsregexp (optional!).
+	build = "make install_jsregexp"
+},
+	{ 'stevearc/dressing.nvim' },
+	{"stevearc/conform.nvim"},
+	{"mfussenegger/nvim-lint"},
 })
 -- Default Editor Settings
 vim.g.mapleader = " "
@@ -131,60 +140,141 @@ harpoon:setup()
 vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
 vim.keymap.set("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
 
--- Sensible keymaps for CoC.nvim
--- Helper to shorten function calls
-local keymap = vim.keymap.set
-local opts = { silent = true, noremap = true }
--- === Completion ===
-vim.cmd([[
-  inoremap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-  inoremap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-  inoremap <silent><expr> <CR> pumvisible() ? coc#_select_confirm() : "\<CR>"
-]])
--- === Diagnostics ===
-keymap("n", "[g", "<Plug>(coc-diagnostic-prev)", opts)
-keymap("n", "]g", "<Plug>(coc-diagnostic-next)", opts)
-keymap("n", "<leader>d", ":<C-u>CocDiagnostic<CR>", { silent = true })
--- === Go-To Navigation ===
-keymap("n", "gd", "<Plug>(coc-definition)", opts)
-keymap("n", "gy", "<Plug>(coc-type-definition)", opts)
-keymap("n", "gi", "<Plug>(coc-implementation)", opts)
-keymap("n", "gr", "<Plug>(coc-references)", opts)
--- === Code Actions & Refactoring ===
-keymap("n", "<leader>rn", "<Plug>(coc-rename)", opts)
-keymap("n", "<leader>ca", "<Plug>(coc-codeaction)", opts)
-keymap("x", "<leader>ca", "<Plug>(coc-codeaction-selected)", opts)
--- keymap("n", "<leader>qf", "<Plug>(coc-fix-current)", opts)
---
--- === Formatting ===
-keymap("n", "<leader>f", "<Plug>(coc-format)", opts)
-keymap("x", "<leader>f", "<Plug>(coc-format-selected)", opts)
+-- Configure Mason
+require('mason').setup()
+require('mason-lspconfig').setup {
+  ensure_installed = {'lua_ls' },  -- example LSPs
+}
 
--- === Hover & Signature Help ===
-keymap("n", "K", function()
-	vim.fn.CocActionAsync('doHover')
-end, opts)
-keymap("i", "<C-Space>", "coc#refresh()", { silent = true, expr = true })
+vim.diagnostic.config({
+  signs = true,          -- gutter icons
+  float = { border = "rounded" },
+  update_in_insert = false,
+})
 
--- === Workspace / Lists ===
-keymap("n", "<leader>ws", ":CocList -I symbols<CR>", opts)
-keymap("n", "<leader>cl", ":CocList<CR>", opts)
+local cmp = require('cmp')
 
--- === Auto-highlighting ===
+cmp.setup({
+  snippet = {
+    expand = function(args)
+      require('luasnip').lsp_expand(args.body)
+    end,
+  },
+  mapping = cmp.mapping.preset.insert({
+    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+    ['<C-f>'] = cmp.mapping.scroll_docs(4),
+    ['<C-Space>'] = cmp.mapping.complete(),
+    ['<C-e>'] = cmp.mapping.abort(),
+    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+    ['<Tab>'] = cmp.mapping(function(fallback)
+      if cmp.visible() then
+        cmp.select_next_item()
+      else
+        fallback()
+      end
+    end, { 'i', 's' }),
+    ['<S-Tab>'] = cmp.mapping(function(fallback)
+      if cmp.visible() then
+        cmp.select_prev_item()
+      else
+        fallback()
+      end
+    end, { 'i', 's' }),
+  }),
+  window = {
+    completion = cmp.config.window.bordered(),
+    documentation = cmp.config.window.bordered(),
+  },
+  sources = cmp.config.sources({
+    { name = 'nvim_lsp' },
+    { name = 'buffer' },
+    { name = 'path' },
+  }),
+})
+
+require("conform").setup({
+  formatters_by_ft = {
+    javascript = { "prettier" },
+    typescript = { "prettier" },
+    javascriptreact = { "prettier" },
+    typescriptreact = { "prettier" },
+    json = { "prettier" },
+    html = { "prettier" },
+    css = { "prettier" },
+  },
+  format_on_save = {
+    lsp_fallback = true,
+    timeout_ms = 500,
+  },
+})
+
+-- 🕵️ 3. Linter: ESLint via nvim-lint
+-- Requires: npm i -g eslint_d
+require("lint").linters_by_ft = {
+  javascript = { "eslint_d" },
+  typescript = { "eslint_d" },
+  javascriptreact = { "eslint_d" },
+  typescriptreact = { "eslint_d" },
+}
+
+-- Run the linter automatically on save
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+  callback = function()
+    require("lint").try_lint()
+  end,
+})
+
+require('dressing').setup({
+  select = {
+    backend = { "telescope", "fzf_lua", "nui", "builtin" },
+    builtin = {
+      border = "rounded",
+      relative = "cursor",
+      max_height = 0.4,
+      min_height = 4,
+    },
+  },
+})
+
+
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    local bufnr = args.buf
+    local opts = { buffer = bufnr }
+    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+    vim.keymap.set('n', 'rn', vim.lsp.buf.rename, opts)
+		vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, opts)
+
+
+		vim.keymap.set('n', '<leader>ca', function()
+			vim.lsp.buf.code_action({
+				-- These options make it use a floating popup
+				apply = false,
+				context = {},
+			})
+		end, { desc = "Show code actions in popup" })
+
+		vim.keymap.set('n', 'K', function()
+		local line_diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1 })
+			if #line_diagnostics > 0 then
+				vim.diagnostic.open_float(nil, { focus = false })
+			else
+			vim.lsp.buf.hover()
+			end
+		end, { desc = "Show hover or diagnostics" })
+    -- more mappings...
+  end
+})
+
+vim.o.updatetime = 400
 vim.api.nvim_create_autocmd("CursorHold", {
-	callback = function()
-		vim.fn.CocActionAsync("highlight")
-	end,
+  callback = function()
+    vim.diagnostic.open_float(nil, { focus = false })
+  end,
 })
 
--- === Optional: Signature help on placeholder jump ===
-vim.api.nvim_create_autocmd("User", {
-	pattern = "CocJumpPlaceholder",
-	callback = function()
-		vim.fn.CocActionAsync("showSignatureHelp")
-	end,
-})
-
+-- Helper to shorten function calls
 -- Autoclose Pairs Custom Script
 local bracket_pairs = {
 	["("] = ")",
