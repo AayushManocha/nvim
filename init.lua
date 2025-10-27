@@ -33,20 +33,27 @@ require("lazy").setup({
 		end,
 	},
 	{ "luisiacc/gruvbox-baby" },
-	{ "EdenEast/nightfox.nvim" },
-	{ 'embark-theme/vim',              lazy = false,      priority = 1000,                           name = 'embark' },
-	{ 'rose-pine/neovim',              name = "rose-pine" },
-	{ "nvim-telescope/telescope.nvim", tag = "0.1.8",     dependencies = { "nvim-lua/plenary.nvim" } },
+	{ "rebelot/kanagawa.nvim" },
+	{ "xStormyy/bearded-theme.nvim" },
+	{ "Mofiqul/vscode.nvim" },
+	{ "scottmckendry/cyberdream.nvim" },
+	{ "shaunsingh/nord.nvim" },
+	{ "olivercederborg/poimandres.nvim" },
+	{
+		"felipeagc/fleet-theme-nvim",
+	},
+
+	{ "nvim-telescope/telescope.nvim", tag = "0.1.8",                                                                    dependencies = { "nvim-lua/plenary.nvim" } },
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
 		dependencies = { "nvim-lua/plenary.nvim", "MunifTanjim/nui.nvim", "nvim-tree/nvim-web-devicons" },
 	},
-	{ "nvim-tree/nvim-web-devicons", opts = {} },
-	{ "ThePrimeagen/harpoon",        branch = "harpoon2",                                                              dependencies = { "nvim-lua/plenary.nvim" } },
-	{ 'nvim-lualine/lualine.nvim',   dependencies = { 'nvim-tree/nvim-web-devicons' } },
-	{ 'neovim/nvim-lspconfig',       dependencies = { 'williamboman/mason.nvim', 'williamboman/mason-lspconfig.nvim' } },
-	{ 'hrsh7th/nvim-cmp',            config = {} },
+	{ "nvim-tree/nvim-web-devicons",   opts = {} },
+	{ "ThePrimeagen/harpoon",          branch = "harpoon2",                                                              dependencies = { "nvim-lua/plenary.nvim" } },
+	{ 'nvim-lualine/lualine.nvim',     dependencies = { 'nvim-tree/nvim-web-devicons' } },
+	{ 'neovim/nvim-lspconfig',         dependencies = { 'williamboman/mason.nvim', 'williamboman/mason-lspconfig.nvim' } },
+	{ 'hrsh7th/nvim-cmp',              config = {} },
 	{ 'hrsh7th/cmp-nvim-lsp' },
 	{
 		"L3MON4D3/LuaSnip",
@@ -74,7 +81,19 @@ require("lazy").setup({
 		end
 	},
 
-	{ 'github/copilot.vim' }
+	{ 'kevinhwang91/nvim-ufo', dependencies = { 'kevinhwang91/promise-async' } },
+	{
+		"ray-x/lsp_signature.nvim",
+		event = "InsertEnter",
+		opts = {
+			bind = true,
+			handler_opts = {
+				border = "rounded"
+			}
+		},
+		-- or use config
+		-- config = function(_, opts) require'lsp_signature'.setup({you options}) end
+	}
 })
 -- Default Editor Settings
 vim.g.mapleader = " "
@@ -93,6 +112,8 @@ vim.opt.tabstop = 2     -- how wide a tab character is
 vim.opt.shiftwidth = 2  -- how many spaces to indent
 vim.opt.softtabstop = 2 -- how many spaces <Tab> insert
 vim.opt.scrolloff = 8
+vim.o.updatetime = 200
+vim.o.cursorline = true
 
 -- Color Scheme Configuration
 vim.g.gruvbox_baby_function_style = "NONE"
@@ -100,7 +121,12 @@ vim.g.gruvbox_baby_keyword_style = "italic"
 vim.g.gruvbox_baby_telescope_theme = 1
 vim.g.gruvbox_baby_background_color = "dark"
 
-vim.cmd("colorscheme gruvbox-baby")
+vim.cmd("colorscheme kanagawa-wave")
+
+require('ufo').setup({
+	fold_virt_text_handler = nil,     -- keep virtual text normal
+	enable_get_fold_virt_text = false, -- optional
+})
 
 require('lualine').setup {
 	options = {
@@ -291,19 +317,24 @@ vim.api.nvim_create_autocmd("CursorHold", {
 	end,
 })
 
--- Helper to shorten function calls
--- Autoclose Pairs Custom Script
--- local bracket_pairs = {
--- 	["("] = ")",
--- 	["["] = "]",
--- 	["{"] = "}",
--- 	["'"] = "'",
--- 	['"'] = '"',
--- }
---
--- for open_char, close_char in pairs(bracket_pairs) do
--- 	vim.keymap.set("i", open_char, open_char .. close_char .. "<Left>")
--- end
+vim.o.foldcolumn = '1' -- '0' is not bad
+vim.o.foldlevel = 99   -- Using ufo provider need a large value, feel free to decrease the value
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.foldingRange = {
+	dynamicRegistration = false,
+	lineFoldingOnly = true
+}
+local language_servers = vim.lsp.get_clients() -- or list servers manually like {'gopls', 'clangd'}
+for _, ls in ipairs(language_servers) do
+	require('lspconfig')[ls].setup({
+		capabilities = capabilities
+		-- you can add other fields for setting up lsp server in this table
+	})
+end
+require('ufo').setup()
 
 vim.keymap.set("n", "<leader>gt", function()
 	local test = vim.fn.expand("<cword>")
