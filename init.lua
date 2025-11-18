@@ -10,9 +10,10 @@ require("lazy").setup({
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
+		event = { "BufReadPost", "BufNewFile" },
+		branch = "master",
 		config = function()
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "lua", "javascript", "typescript", "tsx", "python", "html", "css", "ruby" },
 				sync_install = false,
 				auto_install = true,
 				highlight = {
@@ -31,6 +32,17 @@ require("lazy").setup({
 				},
 			})
 		end,
+	},
+	{
+		'stevearc/oil.nvim',
+		---@module 'oil'
+		---@type oil.SetupOpts
+		opts = {},
+		-- Optional dependencies
+		dependencies = { { "nvim-mini/mini.icons", opts = {} } },
+		-- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
+		-- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
+		lazy = false,
 	},
 	{ "luisiacc/gruvbox-baby" },
 	{ "rebelot/kanagawa.nvim" },
@@ -58,7 +70,8 @@ require("lazy").setup({
 	{
 		"L3MON4D3/LuaSnip",
 		-- follow latest release.
-		version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+		version = "v2.0", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+		enabled = false,
 		-- install jsregexp (optional!).
 		build = "make install_jsregexp"
 	},
@@ -93,7 +106,10 @@ require("lazy").setup({
 		},
 		-- or use config
 		-- config = function(_, opts) require'lsp_signature'.setup({you options}) end
-	}
+	},
+	{ 'mfussenegger/nvim-dap' },
+	{ 'nvim-neotest/nvim-nio' },
+	{ "rcarriga/nvim-dap-ui",  requires = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" } }
 })
 -- Default Editor Settings
 vim.g.mapleader = " "
@@ -103,10 +119,11 @@ vim.opt.tabstop = 4
 vim.opt.relativenumber = true
 vim.opt.wrap = false
 vim.opt.clipboard = "unnamedplus"
-vim.o.termguicolors = true
+vim.o.termguicolors = false
 vim.g.have_nerd_font = true
 vim.opt.guifont = { "Fira Code", "h12" }
 vim.opt.signcolumn = "yes:1"
+vim.o.foldcolumn = "0"
 vim.opt.showmode = false
 vim.opt.tabstop = 2     -- how wide a tab character is
 vim.opt.shiftwidth = 2  -- how many spaces to indent
@@ -114,6 +131,7 @@ vim.opt.softtabstop = 2 -- how many spaces <Tab> insert
 vim.opt.scrolloff = 8
 vim.o.updatetime = 200
 vim.o.cursorline = true
+vim.cmd([[syntax off]])
 
 -- Color Scheme Configuration
 vim.g.gruvbox_baby_function_style = "NONE"
@@ -121,11 +139,25 @@ vim.g.gruvbox_baby_keyword_style = "italic"
 vim.g.gruvbox_baby_telescope_theme = 1
 vim.g.gruvbox_baby_background_color = "dark"
 
-vim.cmd("colorscheme kanagawa-wave")
+vim.cmd("colorscheme gruvbox-baby")
+
+vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
+vim.api.nvim_set_hl(0, "FoldColumn", { bg = "none" })
+
+require("oil").setup()
+vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
 
 require('ufo').setup({
 	fold_virt_text_handler = nil,     -- keep virtual text normal
 	enable_get_fold_virt_text = false, -- optional
+
+	provider_selector = function(_, _, _)
+		vim.o.foldcolumn = "0" -- ensure no fold column when UFO attaches
+		return { "treesitter", "indent" }
+	end,
 })
 
 require('lualine').setup {
@@ -160,6 +192,7 @@ vim.keymap.set("n", "<leader>k", "<C-w>k", { desc = "Move to top split" })
 vim.keymap.set("n", "<leader>q", ":q<CR>", { desc = "Close Buffer" })
 vim.keymap.set("n", "<leader>s", ":split<CR><C-w>j", { desc = "Horizontal split" })
 vim.keymap.set("n", "<leader>v", ":vsplit<CR><C-w>l", { desc = "Vertical split" })
+vim.keymap.set("n", "<leader>t", ":term<CR>", { desc = "open terminal" })
 vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { noremap = true, silent = true })
 
 -- Telescope Keymaps
@@ -183,6 +216,8 @@ harpoon:setup()
 vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
 vim.keymap.set("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
 
+
+require("dapui").setup()
 
 require('mason').setup()
 require('mason-lspconfig').setup {
@@ -259,6 +294,14 @@ require("lint").linters_by_ft = {
 	javascriptreact = { "eslint_d" },
 	typescriptreact = { "eslint_d" },
 }
+
+local lspconfig = require("lspconfig")
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
+
+lspconfig.tsserver.setup({
+	capabilities = capabilities,
+	filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+})
 
 -- Run the linter automatically on save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
