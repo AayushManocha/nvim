@@ -40,6 +40,14 @@ require("lazy").setup({
 		end,
 	},
 	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" },
+		ft = { "markdown", "markdown_inline" },
+		---@module 'render-markdown'
+		---@type render.md.UserConfig
+		opts = {},
+	},
+	{
 		"folke/trouble.nvim",
 		opts = {}, -- for default options, refer to the configuration section for custom setup.
 		cmd = "Trouble",
@@ -287,29 +295,90 @@ require("lazy").setup({
 		'nvim-lualine/lualine.nvim',
 		event = "VeryLazy",
 		dependencies = { 'nvim-tree/nvim-web-devicons' },
-		opts = {
-			options = {
-				theme = 'auto',
-				section_separators = '',
-				component_separators = '',
-			},
-			sections = {
-				lualine_a = { 'mode' },
-				lualine_b = {},
-				lualine_c = { 'filename' },
-				lualine_x = {},
-				lualine_y = { 'progress' },
-				lualine_z = {},
-			},
-			inactive_sections = {
-				lualine_a = {},
-				lualine_b = {},
-				lualine_c = { 'filename' },
-				lualine_x = {},
-				lualine_y = {},
-				lualine_z = {},
-			},
-		},
+		config = function()
+			local lualine = require("lualine")
+
+			-- Slanted powerline separators. These need a patched Nerd Font in the
+			-- terminal; swap for '' / '' (or '') if they render as boxes.
+			local opts = {
+				options = {
+					-- 'auto' derives the palette from the active colorscheme, so this
+					-- keeps matching whatever theme themery switches to.
+					theme = "auto",
+					globalstatus = true,
+					section_separators = { left = "", right = "" },
+					component_separators = { left = "", right = "" },
+					disabled_filetypes = {
+						statusline = { "neo-tree", "dapui_scopes", "dapui_breakpoints",
+							"dapui_stacks", "dapui_watches", "dap-repl" },
+					},
+				},
+				sections = {
+					lualine_a = {
+						{ "mode", fmt = function(str) return " " .. str end },
+					},
+					lualine_b = {
+						{ "branch", icon = "" },
+						{
+							"diff",
+							symbols = { added = " ", modified = " ", removed = " " },
+						},
+					},
+					lualine_c = {
+						{
+							"filename",
+							path = 1, -- relative to cwd, so nested files stay identifiable
+							symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" },
+						},
+						{
+							"diagnostics",
+							sources = { "nvim_lsp" },
+							symbols = { error = " ", warn = " ", info = " ", hint = " " },
+						},
+					},
+					lualine_x = {
+						{
+							-- Attached LSP servers, so it's obvious when one hasn't started.
+							function()
+								local names = {}
+								for _, client in pairs(vim.lsp.get_clients({ bufnr = 0 })) do
+									names[#names + 1] = client.name
+								end
+								if #names == 0 then
+									return ""
+								end
+								return " " .. table.concat(names, ", ")
+							end,
+						},
+						{ "encoding", cond = function() return vim.o.fileencoding ~= "utf-8" end },
+						{ "filetype", icon_only = false },
+					},
+					lualine_y = { { "progress" } },
+					lualine_z = { { "location", icon = "" } },
+				},
+				inactive_sections = {
+					lualine_a = {},
+					lualine_b = {},
+					lualine_c = { { "filename", path = 1 } },
+					lualine_x = { "location" },
+					lualine_y = {},
+					lualine_z = {},
+				},
+				extensions = { "neo-tree", "trouble", "lazy", "mason", "oil", "quickfix" },
+			}
+
+			lualine.setup(opts)
+
+			-- themery swaps colorschemes at runtime; lualine only resolves the 'auto'
+			-- palette during setup, so re-run it whenever the colorscheme changes.
+			vim.api.nvim_create_autocmd("ColorScheme", {
+				group = vim.api.nvim_create_augroup("LualineFollowColorScheme", { clear = true }),
+				callback = function()
+					opts.options.theme = "auto"
+					lualine.setup(opts)
+				end,
+			})
+		end,
 	},
 	{ 'neovim/nvim-lspconfig',       dependencies = { 'williamboman/mason.nvim', 'williamboman/mason-lspconfig.nvim' } },
 	{
